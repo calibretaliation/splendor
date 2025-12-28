@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="application-name" content="Cosmic Splendor" />
+    <meta name="theme-color" content="#050510" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Cosmic Splendor" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Cosmic Splendor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Chakra Petch"', 'sans-serif'],
+              mono: ['"Space Mono"', 'monospace'],
+            },
+            colors: {
+              space: {
+                black: '#050510',
+                dark: '#0f0f23',
+                light: '#1a1a3d',
+                accent: '#4B0082',
+                panel: '#151525',
+              },
+              gem: {
+                white: '#e2e8f0', // Diamond
+                blue: '#00bfff',  // Sapphire
+                green: '#00ff7f', // Emerald
+                red: '#ff4500',   // Ruby
+                black: '#4a5568', // Onyx
+                gold: '#ffd700',  // Gold
+              }
+            },
+            boxShadow: {
+              'pixel': '4px 4px 0px 0px rgba(0,0,0,0.5)',
+              'pixel-sm': '2px 2px 0px 0px rgba(0,0,0,0.5)',
+              'neon-blue': '0 0 5px #00bfff, 0 0 10px #00bfff',
+              'neon-red': '0 0 5px #ff4500, 0 0 10px #ff4500',
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #050510;
+        color: #e2e8f0;
+        font-family: 'Space Mono', monospace;
+        overscroll-behavior: none;
+      }
+      h1, h2, h3, h4, h5, h6, button, .font-header {
+        font-family: 'Chakra Petch', sans-serif;
+      }
+      .crt::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 50;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f0f23; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #4B0082; 
+        border: 1px solid #0f0f23;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #6a0dad; 
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

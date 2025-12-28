@@ -1,0 +1,21 @@
+## Recent Activity
+- 2025-12-27: Added PWA installability (manifest, apple meta tags, service worker caching) using icon.png as the logo; registered SW in index.tsx and set display to fullscreen/landscape for Android-first behavior. Locked App to landscape on supported devices and rebuilt successfully with `npm run build`.
+- 2025-12-27: User asked to set up libraries and run the demo version of the app.
+- Installed npm dependencies with `npm install`.
+- Started the Vite dev server via `npm run dev`; it is serving on http://localhost:3000 (terminal session 44cc68db-edcc-4d30-9dc6-2311bc0ddc87). Use Ctrl+C in that terminal to stop it.
+- Implemented a compact phone-landscape layout in components/Card.tsx, components/PlayerPanel.tsx, and components/GameBoard.tsx to eliminate scrolling while preserving desktop layout. Verified with `npm run build`.
+- Refined the compact layout to fully fit within phone landscape: locked App to `h-dvh`, shrank market/noble tiles to a single row, tightened player panels, color-coded gem stats, reworked alien overlord tiles to prevent overlap, and confirmed build via `npm run build`.
+- Updated the gem/card palette to a unified seven-color scheme (red, grey, yellow, green, blue, violet, white), applied via shared constants across Card, GemToken, PlayerPanel, and GameBoard, and verified with `npm run build`.
+- 2025-12-27: Expanded design-summary.md with detailed sections on rules enforcement, UI behaviors, AI systems, networking, and roadmap for future development reference.
+- 2025-12-27: Shifted reserve (gold) token palette to orange and ensured disabled gold chips keep their color by adjusting GemToken; confirmed with `npm run build`.
+- 2025-12-27: Colored compact player panel gem labels (letters) to match their corresponding gem counts and rebuilt with `npm run build`.
+- 2025-12-27: Replaced procedural deck generation with parsing of cards.txt (raw import) to build all cards deterministically; inferred levels from cost/points and verified with `npm run build`.
+- 2025-12-27: Updated card parsing to use the explicit Tier column from cards.txt for levels; rebuilt with `npm run build`.
+- 2025-12-27: Enlarged card cost pips and reduced the card art grain overlay for readability; rebuilt with `npm run build`.
+- 2025-12-27: Removed gradients from card cost pips for a flat fill; rebuilt with `npm run build`.
+- 2025-12-27: Forced flat, non-blended cost circles (no shadow/striping artifacts) and rebuilt with `npm run build`.
+- 2025-12-27: Added AI strategy selector in Lobby to choose aggressive/defensive/balanced/random/gemini and plumbed it into game initialization; initializeGame now accepts an AI strategy override for auto-filled bots.
+- 2025-12-27: Implemented AI decision layer with Gemini fallback, compact prompts, action logging, and a console log showing which strategy/source each AI uses per turn.
+- 2025-12-27: Tightened lobby and winner screens for mobile (reduced padding/font sizes, constrained containers) so they fit phone viewports without scrolling.
+- 2025-12-27: Hardened Gemini response parsing with regex/keyword/prefix salvage to keep AI on Gemini even when responses are truncated or malformed.
+- 2025-12-27: Added Gemma/Gemini LLM strategy choices per bot in the Lobby, mapped strategies to explicit models (gemma-3-27b-it, gemini-2.5-flash), and pass move source as the selected model.
