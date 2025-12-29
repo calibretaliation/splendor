@@ -1,71 +1,80 @@
-import { GameState, Player, GemColor, Card, Noble, ActionType, Cost, AIActionDecision, AIStrategyId, LogEventKind, AIMoveSource } from '../types';
+import { GameState, Player, GemColor, Card, Noble, ActionType, AIActionDecision, AIStrategyId, LogEventKind, AIMoveSource, PlayerConfig } from '../types';
 import { INITIAL_DECKS, NOBLES, TARGET_SCORE_DEFAULT, MAX_GEMS, MAX_RESERVED, AVATAR_NAMES, DEFAULT_AI_STRATEGIES } from '../constants';
 import { chooseAIMove } from './ai/decisionEngine';
+import {
+  createPlayer,
+  cloneGameState,
+  shuffle,
+  drawMany,
+  drawTop,
+  getGemCount,
+  canBuyCard,
+  replenishMarketSlot,
+  nextPlayerIndex,
+  NON_GOLD_GEMS,
+} from './gameUtils';
+
+export { getGemCount, canBuyCard } from './gameUtils';
 
 // --- Initialization ---
 
-export interface PlayerConfig {
-  name: string;
-  isHuman: boolean;
-  id: string;
+export interface InitializeGameArgs {
+  seats: PlayerConfig[];
+  targetScore?: number;
 }
 
-export const initializeGame = (
-  playerConfigs: PlayerConfig[],
-  targetScore: number = TARGET_SCORE_DEFAULT,
-  aiStrategyOverride?: AIStrategyId,
-  aiStrategiesBySeat?: AIStrategyId[],
-): GameState => {
+export const initializeGame = ({
+  seats,
+  targetScore = TARGET_SCORE_DEFAULT,
+}: InitializeGameArgs): GameState => {
+  const deckLevel1 = shuffle(INITIAL_DECKS.level1);
+  const deckLevel2 = shuffle(INITIAL_DECKS.level2);
+  const deckLevel3 = shuffle(INITIAL_DECKS.level3);
+
+  const { drawn: marketLevel1, deck: remainingLevel1 } = drawMany(deckLevel1, 4);
+  const { drawn: marketLevel2, deck: remainingLevel2 } = drawMany(deckLevel2, 4);
+  const { drawn: marketLevel3, deck: remainingLevel3 } = drawMany(deckLevel3, 4);
+
   const decks = {
-    level1: [...INITIAL_DECKS.level1].sort(() => Math.random() - 0.5),
-    level2: [...INITIAL_DECKS.level2].sort(() => Math.random() - 0.5),
-    level3: [...INITIAL_DECKS.level3].sort(() => Math.random() - 0.5),
+    level1: remainingLevel1,
+    level2: remainingLevel2,
+    level3: remainingLevel3,
   };
 
   const market = {
-    level1: decks.level1.splice(0, 4),
-    level2: decks.level2.splice(0, 4),
-    level3: decks.level3.splice(0, 4),
+    level1: marketLevel1,
+    level2: marketLevel2,
+    level3: marketLevel3,
   };
 
-  const nobles = [...NOBLES].sort(() => Math.random() - 0.5).slice(0, 5);
+  const nobles = shuffle(NOBLES).slice(0, 5);
 
   const totalPlayers = 4;
-  const players: Player[] = [];
+  const players: Player[] = Array.from({ length: totalPlayers }, (_, seatIndex) => {
+    const provided = seats[seatIndex];
+    if (provided) {
+      const name = provided.name || `Explorer ${seatIndex + 1}`;
+      const avatarId = provided.avatarId ?? (provided.isHuman ? seatIndex + 1 : seatIndex + 5);
+      const id = provided.id || (provided.isHuman ? `player-${seatIndex + 1}` : `ai-${seatIndex + 1}`);
+      return createPlayer({
+        id,
+        name,
+        isHuman: provided.isHuman,
+        avatarId,
+        aiStrategyId: provided.aiStrategyId,
+      });
+    }
 
-  // Add human players
-  playerConfigs.forEach((config, index) => {
-    players.push({
-      id: config.id,
-      name: config.name || `Explorer ${index + 1}`,
-      isHuman: true,
-      avatarId: index + 1,
-      gems: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
-      bonuses: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
-      reservedCards: [],
-      points: 0,
-      nobles: [],
+    const aiName = AVATAR_NAMES[seatIndex] ?? `AI ${seatIndex + 1}`;
+    const aiStrategy = DEFAULT_AI_STRATEGIES[seatIndex % DEFAULT_AI_STRATEGIES.length] as AIStrategyId;
+    return createPlayer({
+      id: `ai-${seatIndex + 1}`,
+      name: aiName,
+      isHuman: false,
+      avatarId: seatIndex + 5,
+      aiStrategyId: aiStrategy,
     });
   });
-
-  // Fill rest with AI
-  const humansCount = players.length;
-  for (let i = humansCount; i < totalPlayers; i++) {
-    players.push({
-      id: `ai-${i + 1}`,
-      name: AVATAR_NAMES[i],
-      isHuman: false,
-      avatarId: i + 5,
-      aiStrategyId: aiStrategiesBySeat?.[i] || aiStrategyOverride || (DEFAULT_AI_STRATEGIES[(i - humansCount) % DEFAULT_AI_STRATEGIES.length] as AIStrategyId),
-      gems: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
-      bonuses: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
-      reservedCards: [],
-      points: 0,
-      nobles: [],
-    });
-  }
-
-  // Shuffle players order? Optional. For now keeping order of join.
 
   return {
     players,
@@ -81,32 +90,6 @@ export const initializeGame = (
     history: [],
   };
 };
-
-// --- Helper Functions ---
-
-export const getGemCount = (player: Player): number => {
-  return Object.values(player.gems).reduce((a, b) => a + b, 0);
-};
-
-export const canBuyCard = (player: Player, card: Card): boolean => {
-  let goldNeeded = 0;
-  
-  for (const color of Object.keys(card.cost) as GemColor[]) {
-    if (color === GemColor.Gold) continue;
-    
-    const cost = card.cost[color] || 0;
-    const bonus = player.bonuses[color] || 0;
-    const owned = player.gems[color] || 0;
-    
-    const remainingCost = Math.max(0, cost - bonus);
-    if (owned < remainingCost) {
-      goldNeeded += (remainingCost - owned);
-    }
-  }
-  
-  return player.gems.gold >= goldNeeded;
-};
-
 const logAction = (state: GameState, kind: LogEventKind, summary: string, payload?: Record<string, unknown>) => {
   if (!state.history) state.history = [];
   const actor = state.players[state.currentPlayerIndex];
@@ -122,137 +105,159 @@ const logAction = (state: GameState, kind: LogEventKind, summary: string, payloa
   });
 };
 
+const formatBonusLabel = (color: GemColor): string => color.charAt(0).toUpperCase() + color.slice(1);
+
 // --- Action Handlers ---
 
 export const takeGems = (state: GameState, gemsToTake: GemColor[]): GameState => {
-  const newState = JSON.parse(JSON.stringify(state)); // Deep copy
-  const player = newState.players[newState.currentPlayerIndex];
-  
-  // Validation
-  if (gemsToTake.includes(GemColor.Gold)) return state; // Cannot take gold directly
-  if (getGemCount(player) + gemsToTake.length > MAX_GEMS) return state; // Over limit (simplified: just block action)
-  
-  // Logic for 2 same color (must have 4 available)
+  const currentPlayer = state.players[state.currentPlayerIndex];
+
+  if (gemsToTake.includes(GemColor.Gold)) return state;
+  if (getGemCount(currentPlayer) + gemsToTake.length > MAX_GEMS) return state;
+
   if (gemsToTake.length === 2 && gemsToTake[0] === gemsToTake[1]) {
-    if (newState.gems[gemsToTake[0]] < 4) return state;
-  }
-  
-  // Logic for 3 different (must have > 0)
-  for (const color of gemsToTake) {
-    if (newState.gems[color] <= 0) return state;
+    if (state.gems[gemsToTake[0]] < 4) return state;
   }
 
-  // Execute
+  for (const color of gemsToTake) {
+    if (state.gems[color] <= 0) return state;
+  }
+
+  const newState = cloneGameState(state);
+  const player = newState.players[newState.currentPlayerIndex];
+
   gemsToTake.forEach(color => {
     newState.gems[color]--;
     player.gems[color]++;
   });
 
+  const gemCounts = gemsToTake.reduce<Partial<Record<GemColor, number>>>((acc, color) => {
+    acc[color] = (acc[color] ?? 0) + 1;
+    return acc;
+  }, {});
+
   player.lastAction = `Took ${gemsToTake.join(', ')}`;
   newState.lastAction = `${player.name} took gems`;
-    logAction(newState, 'TAKE_GEMS', newState.lastAction, { gems: gemsToTake });
+  logAction(newState, 'TAKE_GEMS', newState.lastAction, { gems: gemsToTake, gemCounts });
   return checkNoblesAndEndTurn(newState);
 };
 
-  export const reserveCard = (state: GameState, card?: Card, fromDeckLevel?: 1 | 2 | 3): GameState => {
-  const newState = JSON.parse(JSON.stringify(state));
-  const player = newState.players[newState.currentPlayerIndex];
+export const reserveCard = (state: GameState, card?: Card, fromDeckLevel?: 1 | 2 | 3): GameState => {
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  if (currentPlayer.reservedCards.length >= MAX_RESERVED) return state;
 
-  if (player.reservedCards.length >= MAX_RESERVED) return state;
-
-  let actualCard = card;
-  
-  // If reserving from deck (blind)
+  let selectedCard: Card | undefined = card;
   if (fromDeckLevel) {
-     const deckKey = `level${fromDeckLevel}` as keyof typeof newState.decks;
-     if (newState.decks[deckKey].length === 0) return state;
-     actualCard = newState.decks[deckKey].pop();
+    const deckKey = `level${fromDeckLevel}` as const;
+    if (state.decks[deckKey].length === 0) return state;
   } else {
-     // Remove from market
-      if (!card) return state;
-     const levelKey = `level${card.level}` as keyof typeof newState.market;
-     const idx = newState.market[levelKey].findIndex((c: Card) => c.id === card.id);
-     if (idx === -1) return state; // Should not happen
-     
-     // Replenish
-     const deckKey = `level${card.level}` as keyof typeof newState.decks;
-     const newCard = newState.decks[deckKey].length > 0 ? newState.decks[deckKey].pop() : null;
-     if (newCard) {
-        newState.market[levelKey][idx] = newCard;
-     } else {
-        newState.market[levelKey].splice(idx, 1);
-     }
+    if (!card) return state;
+    const levelKey = `level${card.level}` as const;
+    const exists = state.market[levelKey].some(c => c.id === card.id);
+    if (!exists) return state;
   }
 
-    if (!actualCard) return state;
-  // Add to player
-  player.reservedCards.push(actualCard);
+  const newState = cloneGameState(state);
+  const player = newState.players[newState.currentPlayerIndex];
 
-  // Take Gold if available
+  if (fromDeckLevel) {
+    const deckKey = `level${fromDeckLevel}` as const;
+    const { card: drawn, deck } = drawTop(newState.decks[deckKey]);
+    if (!drawn) return state;
+    newState.decks[deckKey] = deck;
+    selectedCard = drawn;
+  } else if (selectedCard) {
+    const levelKey = `level${selectedCard.level}` as const;
+    const slotIndex = newState.market[levelKey].findIndex(c => c.id === selectedCard?.id);
+    if (slotIndex === -1) return state;
+    selectedCard = newState.market[levelKey][slotIndex];
+    replenishMarketSlot(newState, selectedCard.level, slotIndex);
+  }
+
+  if (!selectedCard) return state;
+
+  player.reservedCards.push(selectedCard);
+
   if (newState.gems.gold > 0 && getGemCount(player) < MAX_GEMS) {
     newState.gems.gold--;
     player.gems.gold++;
   }
 
-  player.lastAction = `Reserved ${actualCard.id}`;
+  player.lastAction = `Reserved ${selectedCard.id}`;
   newState.lastAction = `${player.name} reserved a card`;
-  logAction(newState, 'RESERVE', newState.lastAction, { cardId: actualCard.id, fromDeckLevel });
+  logAction(newState, 'RESERVE', newState.lastAction, {
+    cardId: selectedCard.id,
+    cardName: selectedCard.name,
+    cardLevel: selectedCard.level,
+    cardPoints: selectedCard.points,
+    cardBonus: selectedCard.bonus,
+    fromDeckLevel,
+  });
   return checkNoblesAndEndTurn(newState);
 };
 
 export const buyCard = (state: GameState, card: Card, isReserved: boolean): GameState => {
-  if (!canBuyCard(state.players[state.currentPlayerIndex], card)) return state;
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  if (!canBuyCard(currentPlayer, card)) return state;
 
-  const newState = JSON.parse(JSON.stringify(state));
+  if (!isReserved) {
+    const levelKey = `level${card.level}` as const;
+    const exists = state.market[levelKey].some(c => c.id === card.id);
+    if (!exists) return state;
+  } else {
+    const owned = currentPlayer.reservedCards.some(c => c.id === card.id);
+    if (!owned) return state;
+  }
+
+  const newState = cloneGameState(state);
   const player = newState.players[newState.currentPlayerIndex];
 
-  // Pay cost
-  for (const color of Object.keys(card.cost) as GemColor[]) {
-    if (color === GemColor.Gold) continue;
-    const cost = card.cost[color] || 0;
-    const bonus = player.bonuses[color] || 0;
+  for (const color of NON_GOLD_GEMS) {
+    const cost = card.cost[color] ?? 0;
+    if (cost === 0) continue;
+
+    const bonus = player.bonuses[color] ?? 0;
     const effectiveCost = Math.max(0, cost - bonus);
-    
-    const owned = player.gems[color] || 0;
-    
-    if (owned >= effectiveCost) {
-      player.gems[color] -= effectiveCost;
-      newState.gems[color] += effectiveCost;
-    } else {
-      // Pay with gems + gold
-      const goldNeeded = effectiveCost - owned;
-      player.gems[color] -= owned;
-      newState.gems[color] += owned;
-      player.gems.gold -= goldNeeded;
-      newState.gems.gold += goldNeeded;
+    if (effectiveCost === 0) continue;
+
+    const available = player.gems[color];
+    const spentFromColor = Math.min(available, effectiveCost);
+    player.gems[color] -= spentFromColor;
+    newState.gems[color] += spentFromColor;
+
+    const remaining = effectiveCost - spentFromColor;
+    if (remaining > 0) {
+      player.gems[GemColor.Gold] -= remaining;
+      newState.gems[GemColor.Gold] += remaining;
     }
   }
 
-  // Add card benefits
-  player.bonuses[card.bonus]++;
+  player.bonuses[card.bonus] = (player.bonuses[card.bonus] ?? 0) + 1;
   player.points += card.points;
 
-  // Remove from source
   if (isReserved) {
-    const rIdx = player.reservedCards.findIndex((c: Card) => c.id === card.id);
-    player.reservedCards.splice(rIdx, 1);
+    player.reservedCards = player.reservedCards.filter(c => c.id !== card.id);
   } else {
-     const levelKey = `level${card.level}` as keyof typeof newState.market;
-     const idx = newState.market[levelKey].findIndex((c: Card) => c.id === card.id);
-     
-     // Replenish
-     const deckKey = `level${card.level}` as keyof typeof newState.decks;
-     const newCard = newState.decks[deckKey].length > 0 ? newState.decks[deckKey].pop() : null;
-     if (newCard) {
-        newState.market[levelKey][idx] = newCard;
-     } else {
-        newState.market[levelKey].splice(idx, 1);
-     }
+    const levelKey = `level${card.level}` as const;
+    const slotIndex = newState.market[levelKey].findIndex(c => c.id === card.id);
+    if (slotIndex !== -1) {
+      replenishMarketSlot(newState, card.level, slotIndex);
+    }
   }
 
-  player.lastAction = `Built ${card.id}`;
-  newState.lastAction = `${player.name} built a module`;
-  logAction(newState, 'BUY', newState.lastAction, { cardId: card.id, isReserved });
+  const bonusLabel = formatBonusLabel(card.bonus);
+  const pointsLabel = typeof card.points === 'number' ? card.points : 0;
+
+  player.lastAction = `Built ${card.id} (${bonusLabel}, ${pointsLabel} pts)`;
+  newState.lastAction = `${player.name} built ${bonusLabel} module (${pointsLabel} pts)`;
+  logAction(newState, 'BUY', newState.lastAction, {
+    cardId: card.id,
+    cardName: card.name,
+    cardLevel: card.level,
+    cardPoints: card.points,
+    cardBonus: card.bonus,
+    isReserved,
+  });
   return checkNoblesAndEndTurn(newState);
 };
 
@@ -260,11 +265,9 @@ export const buyCard = (state: GameState, card: Card, isReserved: boolean): Game
 
 const checkNoblesAndEndTurn = (state: GameState): GameState => {
   const player = state.players[state.currentPlayerIndex];
-  
-  // Check nobles
-  const availableNobles = [...state.nobles];
-  for (let i = availableNobles.length - 1; i >= 0; i--) {
-    const noble = availableNobles[i];
+
+  for (let i = state.nobles.length - 1; i >= 0; i--) {
+    const noble = state.nobles[i];
     let qualifies = true;
     for (const color of Object.keys(noble.requirements) as GemColor[]) {
       if (player.bonuses[color] < (noble.requirements[color] || 0)) {
@@ -275,28 +278,21 @@ const checkNoblesAndEndTurn = (state: GameState): GameState => {
     if (qualifies) {
       player.nobles.push(noble);
       player.points += noble.points;
-      state.nobles.splice(i, 1); // Remove from board
+      state.nobles.splice(i, 1);
       logAction(state, 'NOBLE', `${player.name} gained ${noble.name || noble.id}`, { nobleId: noble.id });
-      // Only 1 noble per turn technically, but for simplicity taking one is fine. 
-      // Splendor rules say you pick one if multiple. We'll auto-pick the first match.
       break; 
     }
   }
 
-  // Check Win Condition (Immediate check or end of round? Rules say finish round)
-  // For simplicity: Check if score >= target.
-  // Ideally we finish the round (Player 4 goes last). 
-  
-  state.currentPlayerIndex = (state.currentPlayerIndex + 1) % 4;
-  if (state.currentPlayerIndex === 0) {
-      state.turn++;
-      // Check winners at start of new round or end of p4
-      const winners = state.players.filter(p => p.points >= state.targetScore);
-      if (winners.length > 0) {
-          // Tie breaker: fewest dev cards. Ignored for simplicity.
-          winners.sort((a,b) => b.points - a.points);
-          state.winnerId = winners[0].id;
-      }
+  const nextIndex = nextPlayerIndex(state.currentPlayerIndex, state.players.length);
+  state.currentPlayerIndex = nextIndex;
+  if (nextIndex === 0) {
+    state.turn++;
+    const winners = state.players.filter(p => p.points >= state.targetScore);
+    if (winners.length > 0) {
+      winners.sort((a, b) => b.points - a.points);
+      state.winnerId = winners[0].id;
+    }
   }
 
   return state;
@@ -315,7 +311,7 @@ const findCardInMarket = (state: GameState, cardId: string): Card | null => {
 };
 
 const passTurn = (state: GameState, strategy?: AIStrategyId, source?: AIMoveSource): GameState => {
-  const newState = JSON.parse(JSON.stringify(state));
+  const newState = cloneGameState(state);
   const aiPlayer = newState.players[newState.currentPlayerIndex];
   newState.lastAction = `${aiPlayer.name} passed`;
   logAction(newState, 'PASS', newState.lastAction, { strategy, source });

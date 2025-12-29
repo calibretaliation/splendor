@@ -1,21 +1,47 @@
-## Recent Activity
-- 2025-12-27: Added PWA installability (manifest, apple meta tags, service worker caching) using icon.png as the logo; registered SW in index.tsx and set display to fullscreen/landscape for Android-first behavior. Locked App to landscape on supported devices and rebuilt successfully with `npm run build`.
-- 2025-12-27: User asked to set up libraries and run the demo version of the app.
-- Installed npm dependencies with `npm install`.
-- Started the Vite dev server via `npm run dev`; it is serving on http://localhost:3000 (terminal session 44cc68db-edcc-4d30-9dc6-2311bc0ddc87). Use Ctrl+C in that terminal to stop it.
-- Implemented a compact phone-landscape layout in components/Card.tsx, components/PlayerPanel.tsx, and components/GameBoard.tsx to eliminate scrolling while preserving desktop layout. Verified with `npm run build`.
-- Refined the compact layout to fully fit within phone landscape: locked App to `h-dvh`, shrank market/noble tiles to a single row, tightened player panels, color-coded gem stats, reworked alien overlord tiles to prevent overlap, and confirmed build via `npm run build`.
-- Updated the gem/card palette to a unified seven-color scheme (red, grey, yellow, green, blue, violet, white), applied via shared constants across Card, GemToken, PlayerPanel, and GameBoard, and verified with `npm run build`.
-- 2025-12-27: Expanded design-summary.md with detailed sections on rules enforcement, UI behaviors, AI systems, networking, and roadmap for future development reference.
-- 2025-12-27: Shifted reserve (gold) token palette to orange and ensured disabled gold chips keep their color by adjusting GemToken; confirmed with `npm run build`.
-- 2025-12-27: Colored compact player panel gem labels (letters) to match their corresponding gem counts and rebuilt with `npm run build`.
-- 2025-12-27: Replaced procedural deck generation with parsing of cards.txt (raw import) to build all cards deterministically; inferred levels from cost/points and verified with `npm run build`.
-- 2025-12-27: Updated card parsing to use the explicit Tier column from cards.txt for levels; rebuilt with `npm run build`.
-- 2025-12-27: Enlarged card cost pips and reduced the card art grain overlay for readability; rebuilt with `npm run build`.
-- 2025-12-27: Removed gradients from card cost pips for a flat fill; rebuilt with `npm run build`.
-- 2025-12-27: Forced flat, non-blended cost circles (no shadow/striping artifacts) and rebuilt with `npm run build`.
-- 2025-12-27: Added AI strategy selector in Lobby to choose aggressive/defensive/balanced/random/gemini and plumbed it into game initialization; initializeGame now accepts an AI strategy override for auto-filled bots.
-- 2025-12-27: Implemented AI decision layer with Gemini fallback, compact prompts, action logging, and a console log showing which strategy/source each AI uses per turn.
-- 2025-12-27: Tightened lobby and winner screens for mobile (reduced padding/font sizes, constrained containers) so they fit phone viewports without scrolling.
-- 2025-12-27: Hardened Gemini response parsing with regex/keyword/prefix salvage to keep AI on Gemini even when responses are truncated or malformed.
-- 2025-12-27: Added Gemma/Gemini LLM strategy choices per bot in the Lobby, mapped strategies to explicit models (gemma-3-27b-it, gemini-2.5-flash), and pass move source as the selected model.
+- 2025-12-28: Removed the hangar reset code prompt/button entirely—hosts now simply leave/recreate rooms if they need a clean slate, and Lobby.tsx no longer stores reset codes in sessionStorage.
+- 2025-12-28: Player register form no longer shows a Default AI Strategy dropdown—new hangars just inherit the lobby baseline and hosts tweak seat strategies once inside the mission hangar.
+- 2025-12-28: Winner screen now shows a full ranking table (points, pilot tags, champion/local highlights) after missions end so everyone sees final standings.
+- 2025-12-28: Fireworks animation layer celebrates the champion on the results screen using lightweight CSS bursts injected in index.html.
+- 2025-12-28: Card market rows now center themselves horizontally inside each layout container so sparse lineups sit in the middle instead of hugging the left edge on wide canvases.
+- 2025-12-28: Gem rack tokens now render in their larger sizes (lg on phones/desktops, md on tablets) so crystal selection hitboxes are ~30% bigger for easier tapping across orientations.
+- 2025-12-28: Reserved modules overlay now listens for backdrop taps/clicks, closing automatically when players touch outside the panel so mobile pilots aren't forced to hit the close button.
+- 2025-12-28: Abort Mission overlay now lives at the GameBoard root as a full-screen modal (Escape/backdrop dismiss, responsive buttons) so landscape mobile hosts can see both actions; core App handler no longer double-prompts with window.confirm.
+- 2025-12-28: Added real Neon-backed multiplayer rooms per latest request (host can claim a hangar, share the 5-letter room code, or pilots can join via code entry); lobby now polls Postgres instead of relying on BroadcastChannel so cross-device state stays consistent.
+- 2025-12-28: The runtime game loop syncs every move (human + AI) through Neon—App polls the `cosmic_rooms` table, pushes actions with `saveGameState`, and exposes abort/reset flows that call `clearGameState`; README documents the new `VITE_NEON_DATABASE_URL` + schema bootstrap so future prompts don’t lose the required setup context.
+- 2025-12-28: Hangar shells stay locked to the viewport height and shrink typography/padding (hiding the hero column on sub-520px heights) so mobile-landscape pilots see the full lobby without any scrolling.
+- 2025-12-28: Buy action summaries now spell out module color + points and the opponent history overlay always surfaces the latest two rounds so tapping the log reveals a consistent window.
+- 2025-12-28: Added tappable action log + opponent history overlay (last two rounds, explicit gem/card details, mobile-landscape scroll); per latest request to expose opponents' recent actions via modal.
+- 2025-12-28: View Reserves overlay still opens fullscreen on mobile, but now shows the original card frames in a single row so each reserved module keeps its full art/cost layout while remaining scrollable on phones.
+- 2025-12-28: Card market flexes wider (desktop/tablet) and individual cards grew slightly in width so padded cost chips stay on a single line without wrapping.
+- 2025-12-28: Mobile-landscape layout now lets the central market claim more width (sidebars slimmed) and the micro card template widened so cost tokens stay on one row there too.
+- 2025-12-28: Noble requirement pips now share the same transparent fill + colored border treatment as card cost tokens for consistent iconography.
+- 2025-12-28: Opponent nameplates now use fixed-width, multi-line wraps so long handles stop colliding with the PTS column without resorting to ellipses.
+- 2025-12-28: Tightened opponent panels so PTS stats sit in fixed-width columns, and removed truncate on self panels so long names wrap to the second line as intended.
+- 2025-12-28: Opponent headers now dedicate half the width to icon+name and half to chip/PTS stats, eliminating overlap while keeping names multi-line.
+- 2025-12-28: Micro/compact opponent headers now wrap icon+name inside bordered capsules with smaller avatars so the right-side PTS column stays isolated without crowding.
+- 2025-12-28: Capsule headers now use auto-height containers, updated name clamps, and balanced font sizes so long labels wrap inside the player panel without breaking the border.
+- 2025-12-28: Removed opponent icons entirely so headers are text-only capsules with wider name widths, keeping all labels inside the panel borders.
+- 2025-12-28: Card frames now use each bonus palette for borders, cost chips are simplified to transparent pills, and the numbers gained a bit of horizontal padding inside their circles for legibility.
+- 2025-12-28: Self panel column now flexes higher so the View Reserves button always has breathing room, and opponent panels reuse the same structure with tighter padding/token sizing for a compact read.
+- 2025-12-28: Mobile landscape now lets the self panel grow naturally (preventing bonus tokens from spilling) and the opponent stack scrolls vertically so the final rival is never clipped on short screens.
+- 2025-12-28: Player panels now share a single name scale with two-line clamps, chip capacity (current/max) replaces the old RS header stat, and every gold cell shows RS gold/reserve counts so compact/micro/default layouts stay consistent.
+- 2025-12-28: Noble names and all player/AI labels now wrap freely without any overflow clipping, keeping every character visible even for multi-line handles.
+- 2025-12-28: Noble requirement rails now left-align with vertical pill indicators, and all player/AI names wrap to two lines instead of truncating so long handles stay legible.
+- 2025-12-28: Overlord badges now use tall, slim requirement chips that read as vertical pills (matching the card-cost styling), and the YOUR TURN badge renders inline inside each player panel to avoid overlapping nearby sections.
+- 2025-12-28: Overlord badges reuse card-style cost tokens, the mobile landscape market stretches deeper, and the reserve button now lives in its own footer strip so stats stay visible.
+- 2025-12-28: Overlord badges slimmed down and their requirement circles now stay in a single horizontal row to match the latest landscape spacing request.
+- 2025-12-28: Landscape phone refinements add orientation-aware board hooks, micro card density, and scroll-free lobby/board shells using DVH containers.
+- 2025-12-28: Mobile-landscape board reorganized with dedicated market span, gem rail, overlord/self column, and stacked opponents; lobby cards tightened so all seats remain selectable.
+- 2025-12-28: Micro player panels, capped overlord set (4) with circular costs, and relocated action log under the market maximize space for the current pilot in landscape mode.
+- 2025-12-28: Lobby flow now keeps seat snapshots in sync, issues a one-time host reset code, and adds host abort controls to GameBoard; crash and join path regressions are resolved.
+- 2025-12-28: Shared game utilities centralize deck building, gem constants, and cloning helpers; gameEngine now relies on structuredClone fallbacks instead of JSON parsing.
+- 2025-12-28: GameBoard and PlayerPanel were decomposed into reusable pieces that share styling palettes, keeping compact and desktop layouts aligned.
+- 2025-12-28: Vite configuration honors Vercel-provided ports, routes HMR through the proxy, and includes a service worker fallback to eliminate ECONNRESET and favicon errors.
+- 2025-12-27: Mobile-first layout overhaul tightens cards, player panels, and lobby/winner screens for landscape phones while preserving desktop behavior.
+- 2025-12-27: Color system consolidated across cards, gems, and panels; gold tokens keep distinct styling and compact labels match gem counts.
+- 2025-12-27: Card data now loads from cards.txt with explicit tiers, ensuring deterministic decks and updated cost visuals.
+- 2025-12-27: AI improvements add selectable strategies (aggressive, defensive, balanced, random, Gemini, Gemma), log move sources, and harden Gemini response parsing.
+- 2025-12-27: PWA installability shipped with manifest, service worker caching, and landscape lock; project documentation expanded in design-summary.md.
+- 2025-12-28: Self panel banner now always displays YOUR TURN + player name (dark when idle, green when active) and the inline name beside the avatar was removed to keep the layout balanced.
+- 2025-12-28: Card selection flow reworked so tapping a tableau or reserve card opens explicit Build/Reserve buttons (no more auto-reserve), outside taps dismiss the overlay, and gem selection now highlights cards that will become affordable once those crystals are collected.
+- 2025-12-28: Prompt "Make the buy-able cards with the current chips/bonus highlight in glow" resolved by letting the tableau glow anytime your existing gems/bonuses already cover a card (and still projecting future affordability while crystals are pre-selected), so the board instantly shows what you can purchase right now.

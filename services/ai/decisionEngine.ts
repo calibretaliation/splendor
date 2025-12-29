@@ -1,5 +1,6 @@
-import { ActionType, AIActionDecision, AIStrategyId, GameState, GemColor, Player, Card } from '../../types';
+import { ActionType, AIActionDecision, AIStrategyId, GameState, Player, Card } from '../../types';
 import { MAX_GEMS, MAX_RESERVED } from '../../constants';
+import { NON_GOLD_GEMS } from '../gameUtils';
 
 // Helper contract supplied by the game engine so we avoid circular imports
 export interface AIHelpers {
@@ -13,7 +14,6 @@ export interface ChooseAIMoveInput {
   helpers: AIHelpers;
 }
 
-const GEM_COLORS: GemColor[] = [GemColor.White, GemColor.Blue, GemColor.Green, GemColor.Red, GemColor.Black];
 
 export const chooseAIMove = async ({ state, player, helpers }: ChooseAIMoveInput): Promise<AIActionDecision> => {
   const strategy: AIStrategyId = player.aiStrategyId ?? 'balanced';
@@ -451,9 +451,9 @@ const totalCost = (card: Card): number => Object.values(card.cost).reduce((a, b)
 
 const prioritizeNeededColors = (state: GameState, player: Player): GemColor[] => {
   const marketTop = pickHighestValueMarketCard(state);
-  if (!marketTop) return GEM_COLORS;
+  if (!marketTop) return NON_GOLD_GEMS;
 
-  const needs = GEM_COLORS.map(color => {
+  const needs = NON_GOLD_GEMS.map(color => {
     const cost = marketTop.cost[color] || 0;
     const owned = (player.gems[color] || 0) + (player.bonuses[color] || 0);
     return { color, missing: Math.max(0, cost - owned) };
@@ -466,7 +466,7 @@ const chooseGemTake = (state: GameState, player: Player, helpers: AIHelpers, pri
   const capacity = MAX_GEMS - helpers.getGemCount(player);
   if (capacity <= 0) return null;
 
-  const available = GEM_COLORS.filter(c => state.gems[c] > 0);
+  const available = NON_GOLD_GEMS.filter(c => state.gems[c] > 0);
   if (available.length === 0) return null;
 
   // Try 3 distinct following priority

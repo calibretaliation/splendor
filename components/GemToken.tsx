@@ -11,12 +11,14 @@ interface GemTokenProps {
   disabled?: boolean;
 }
 
+const sizeClassMap: Record<NonNullable<GemTokenProps['size']>, string> = {
+  sm: 'w-6 h-6 text-base border-2',
+  md: 'w-8 h-8 text-lg border-4',
+  lg: 'w-10 h-10 text-xl border-4',
+};
+
 const GemToken: React.FC<GemTokenProps> = ({ color, count, size = 'md', selected, onClick, disabled }) => {
-  const sizeClass = {
-    sm: 'w-8 h-8 text-sm border-2',
-    md: 'w-12 h-12 text-lg border-4',
-    lg: 'w-16 h-16 text-xl border-4',
-  }[size];
+  const sizeClass = sizeClassMap[size] ?? sizeClassMap.md;
 
   const palette = GEM_DISPLAY_COLORS[color];
   const isGold = color === GemColor.Gold;

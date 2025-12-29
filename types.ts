@@ -62,6 +62,26 @@ export interface Player {
   lastAction?: string;
 }
 
+export interface PlayerConfig {
+  id: string;
+  name: string;
+  isHuman: boolean;
+  aiStrategyId?: AIStrategyId;
+  avatarId?: number;
+}
+
+export interface LobbySeatState {
+  occupant: PlayerConfig | null;
+  aiStrategyId: AIStrategyId;
+}
+
+export interface LobbySnapshot {
+  seats: LobbySeatState[];
+  hostId: string | null;
+  targetScore: number;
+  defaultAIStrategy: AIStrategyId;
+}
+
 export type LogEventKind = ActionType | 'PASS' | 'NOBLE' | 'SYSTEM';
 
 export interface ActionLogEntry {

@@ -40,7 +40,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || new Response('', { status: 504 }));
 
       return cached || fetchPromise;
     })

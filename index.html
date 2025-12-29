@@ -87,6 +87,71 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #6a0dad; 
       }
+      .firework {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: transparent;
+        animation: firework-launch 2.4s ease-in-out infinite;
+        transform: translate(-50%, -50%);
+      }
+      .firework__particle-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 8px;
+        height: 8px;
+        transform-origin: center center;
+      }
+      .firework__particle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 16px;
+        border-radius: 999px;
+        opacity: 0;
+        transform-origin: center bottom;
+        animation: firework-explode 2.4s ease-out infinite;
+      }
+      .firework__particle--warm {
+        background: linear-gradient(180deg, rgba(255,200,124,1) 0%, rgba(255,84,62,0.15) 100%);
+      }
+      .firework__particle--cool {
+        background: linear-gradient(180deg, rgba(96,189,255,1) 0%, rgba(96,189,255,0.08) 100%);
+      }
+      .firework__particle--gold {
+        background: linear-gradient(180deg, rgba(255,238,128,1) 0%, rgba(255,238,128,0.08) 100%);
+      }
+      @keyframes firework-launch {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, 30px) scale(0.6);
+        }
+        30% {
+          opacity: 1;
+          transform: translate(-50%, -10px) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -40px) scale(1.1);
+        }
+      }
+      @keyframes firework-explode {
+        0% {
+          opacity: 0;
+          transform: scaleY(0.2) translateY(0);
+        }
+        25% {
+          opacity: 1;
+          transform: scaleY(0.8) translateY(-25px);
+        }
+        100% {
+          opacity: 0;
+          transform: scaleY(1.1) translateY(-120px);
+        }
+      }
     </style>
   <script type="importmap">
 {

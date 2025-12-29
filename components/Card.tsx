@@ -1,39 +1,68 @@
 import React from 'react';
 import { Card as CardType, GemColor } from '../types';
-import GemToken from './GemToken';
-import { GEM_DISPLAY_COLORS, CARD_LEVEL_BORDER_COLORS } from '../constants';
+import { GEM_DISPLAY_COLORS } from '../constants';
 
 interface CardProps {
   card: CardType;
-  onClick?: () => void;
+  onSelect?: () => void;
+  onBuild?: () => void;
   onReserve?: () => void;
   canBuy?: boolean;
   canReserve?: boolean;
   isReservedView?: boolean;
   disabled?: boolean;
-  density?: 'normal' | 'compact';
+  density?: 'normal' | 'compact' | 'micro';
+  isSelected?: boolean;
+  highlight?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ card, onClick, onReserve, canBuy, canReserve, isReservedView, disabled, density = 'normal' }) => {
+const Card: React.FC<CardProps> = ({
+  card,
+  onSelect,
+  onBuild,
+  onReserve,
+  canBuy,
+  canReserve,
+  isReservedView,
+  disabled,
+  density = 'normal',
+  isSelected,
+  highlight,
+}) => {
   const isCompact = density === 'compact';
-  const sizeClasses = isCompact
-    ? 'w-[70px] h-[100px] p-1.5'
-    : 'w-28 h-36 md:w-32 md:h-40 p-2';
-  const pointsSize = isCompact ? 'text-lg' : 'text-2xl';
-  const bonusSize = isCompact ? 'w-4 h-4' : 'w-6 h-6';
-  const artSpacing = isCompact ? 'my-1' : 'my-2';
-  const cardIdText = isCompact ? 'text-[7px]' : 'text-[10px]';
-  const costSize = isCompact ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-[12px]';
-  const overlayText = isCompact ? 'text-[9px] py-1.5' : 'text-xs py-2';
+  const isMicro = density === 'micro';
+  const sizeClasses = isMicro
+    ? 'w-[66px] h-[96px] p-1'
+    : isCompact
+    ? 'w-[78px] h-[108px] p-1.5'
+    : 'w-[128px] h-36 md:w-[148px] md:h-40 p-2.5';
+  const pointsSize = isMicro ? 'text-base' : isCompact ? 'text-lg' : 'text-2xl';
+  const bonusSize = isMicro ? 'w-3.5 h-3.5' : isCompact ? 'w-4 h-4' : 'w-6 h-6';
+  const artSpacing = isMicro ? 'my-1' : isCompact ? 'my-1' : 'my-2';
+  const cardIdText = isMicro ? 'text-[6px]' : isCompact ? 'text-[7px]' : 'text-[10px]';
+  const costSize = isMicro ? 'w-4.5 h-4.5 text-[9px]' : isCompact ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-[12px]';
+  const overlayText = isMicro ? 'text-[8px] py-1' : isCompact ? 'text-[9px] py-1.5' : 'text-xs py-2';
+  const glowClass = highlight ? 'shadow-[0_0_14px_rgba(250,204,21,0.65)]' : '';
+  const selectedClass = isSelected ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-gray-900' : '';
+  const showActions = Boolean(!disabled && isSelected);
+  const buildDisabled = !canBuy;
+  const reserveDisabled = !canReserve;
   return (
     <div
+      data-card-interactive="true"
+      onClick={() => {
+        if (disabled) return;
+        onSelect?.();
+      }}
       className={`
         relative bg-space-light border-b-4 border-r-4
         flex flex-col justify-between shrink-0 transition-transform ${sizeClasses}
-        ${canBuy && !disabled ? 'cursor-pointer hover:-translate-y-1 shadow-neon-blue' : ''}
+        ${!disabled ? 'cursor-pointer' : ''}
+        ${glowClass}
+        ${selectedClass}
         ${disabled ? 'opacity-50 grayscale' : ''}
       `}
-      style={{ borderColor: CARD_LEVEL_BORDER_COLORS[card.level] }}
+      style={{ borderColor: GEM_DISPLAY_COLORS[card.bonus].border }}
     >
       {/* Header: Points & Bonus */}
       <div className="flex justify-between items-start">
@@ -50,14 +79,17 @@ const Card: React.FC<CardProps> = ({ card, onClick, onReserve, canBuy, canReserv
       </div>
 
       {/* Art Placeholder */}
-        <div className={`flex-1 bg-black/30 border border-white/10 flex items-center justify-center overflow-hidden relative ${artSpacing}`}>
-         {/* Simple pixel art pattern via CSS gradients */}
-         <div className="absolute inset-0 opacity-10" style={{
-           backgroundImage: `linear-gradient(135deg, ${card.bonus === 'red' ? '#500' : '#005'} 15%, transparent 15%), linear-gradient(225deg, #000 15%, transparent 15%), linear-gradient(45deg, #222 15%, transparent 15%), linear-gradient(315deg, #333 15%, transparent 15%)`,
-           backgroundPosition: `${card.imageIndex ? card.imageIndex * 4 : 4}px 0`,
-           backgroundSize: '14px 14px',
-         }}></div>
-         <div className={`z-10 text-gray-400 font-mono tracking-tighter ${cardIdText}`}>MOD-{card.id}</div>
+      <div className={`flex-1 bg-black/30 border border-white/10 flex items-center justify-center overflow-hidden relative ${artSpacing}`}>
+        {/* Simple pixel art pattern via CSS gradients */}
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `linear-gradient(135deg, ${card.bonus === 'red' ? '#500' : '#005'} 15%, transparent 15%), linear-gradient(225deg, #000 15%, transparent 15%), linear-gradient(45deg, #222 15%, transparent 15%), linear-gradient(315deg, #333 15%, transparent 15%)`,
+            backgroundPosition: `${card.imageIndex ? card.imageIndex * 4 : 4}px 0`,
+            backgroundSize: '14px 14px',
+          }}
+        ></div>
+        <div className={`z-10 text-gray-400 font-mono tracking-tighter ${cardIdText}`}>MOD-{card.id}</div>
       </div>
 
       {/* Cost */}
@@ -69,17 +101,13 @@ const Card: React.FC<CardProps> = ({ card, onClick, onReserve, canBuy, canReserv
           return (
             <div
               key={color}
-              className={`rounded-full border flex items-center justify-center font-bold shadow-none ${costSize}`}
+                className={`rounded-full border flex items-center justify-center font-bold ${costSize}`}
               style={{
-                backgroundColor: palette.base,
+                backgroundColor: 'transparent',
                 borderColor: palette.border,
-                backgroundImage: 'none',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: 'auto',
-                backgroundBlendMode: 'normal',
-                mixBlendMode: 'normal',
-                color: palette.text,
-              }}
+                color: palette.base,
+                paddingInline: 1,
+                }}
             >
               {amount}
             </div>
@@ -88,17 +116,31 @@ const Card: React.FC<CardProps> = ({ card, onClick, onReserve, canBuy, canReserv
       </div>
 
       {/* Action Overlay */}
-      {!disabled && (canBuy || canReserve) && (
-        <div className="absolute inset-0 bg-black/90 opacity-0 hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity z-20">
-          {canBuy && (
-             <button onClick={onClick} className={`px-3 bg-green-600 text-white font-bold border border-green-400 w-full hover:bg-green-500 uppercase tracking-wider ${overlayText}`}>
-               BUILD
-             </button>
-          )}
-          {canReserve && onReserve && !isReservedView && (
-             <button onClick={onReserve} className={`px-3 bg-yellow-600 text-white font-bold border border-yellow-400 w-full hover:bg-yellow-500 uppercase tracking-wider ${overlayText}`}>
-               RESERVE
-             </button>
+      {showActions && (
+        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-2 transition-opacity z-20">
+          <button
+            type="button"
+            disabled={buildDisabled}
+            onClick={event => {
+              event.stopPropagation();
+              if (!buildDisabled) onBuild?.();
+            }}
+            className={`px-3 w-full font-bold border uppercase tracking-wider ${overlayText} ${buildDisabled ? 'bg-gray-600 border-gray-500 text-gray-300 cursor-not-allowed' : 'bg-green-600 border-green-400 text-white hover:bg-green-500'}`}
+          >
+            BUILD
+          </button>
+          {!isReservedView && onReserve && (
+            <button
+              type="button"
+              disabled={reserveDisabled}
+              onClick={event => {
+                event.stopPropagation();
+                if (!reserveDisabled) onReserve();
+              }}
+              className={`px-3 w-full font-bold border uppercase tracking-wider ${overlayText} ${reserveDisabled ? 'bg-gray-600 border-gray-500 text-gray-300 cursor-not-allowed' : 'bg-yellow-600 border-yellow-400 text-white hover:bg-yellow-500'}`}
+            >
+              RESERVE
+            </button>
           )}
         </div>
       )}
